@@ -4,7 +4,7 @@
 #include <cjson/cJSON.h>
 #include <curl/curl.h>
 
-typedef struct{
+typedef struct {
     char country[64];
     char city[64];
     char provider[64];
@@ -16,6 +16,10 @@ typedef struct {
     char *data;
     size_t size;
 } ResponseBuffer;
+
+typedef struct {
+    size_t bytes_received;
+} DownloadStats;
 
 ServerInfo* load_servers_info(const char *filepath, int *out_count){
     FILE *file = fopen(filepath, "r");
@@ -117,6 +121,13 @@ size_t got_data(char *buffer, size_t itemsize, size_t nitems, void *userdata) {
     return total_size;
 }
 
+size_t download_callback(char *buffer, size_t itemsize, size_t nitems, void *userdata) {
+    size_t total_size = itemsize * nitems;
+    DownloadStats *stats = (DownloadStats *)userdata;
+    stats->bytes_received += total_size;
+    return total_size;
+}
+
 char* detect_location(){
     ResponseBuffer resp = { .data = malloc(1), .size = 0 };
     resp.data[0] = '\0';
@@ -170,5 +181,43 @@ int main() {
         printf("%s\n", location);
     }
 
+    DownloadStats server_stats = { .bytes_received = 0 };
+ 
+    CURL *curl = curl_easy_init();
+    if (curl) {
+        char url[256];
+        snprintf(url, sizeof(url), "http://%s/download?size=25000000", servers[1].host);
+
+        curl_easy_setopt(curl, CURLOPT_URL, "http://speedtest.litnet.lt:8080//download?size=25000000");
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, download_callback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &server_stats);
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, "curl/8.5.0"); 
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 15L);
+
+        CURLcode result = curl_easy_perform(curl);
+
+        long response_code;
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+        curl_off_t downloaded;
+        curl_easy_getinfo(curl, CURLINFO_SIZE_DOWNLOAD_T, &downloaded);
+
+        printf("Result: %s\n", curl_easy_strerror(result));
+        printf("HTTP code: %ld\n", response_code);
+        printf("Bytes downloaded: %lld\n", (long long)downloaded);
+
+        if (result != CURLE_OK && result != CURLE_OPERATION_TIMEDOUT) {
+            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(result));
+        } 
+        else {
+            curl_off_t speed_bytes;
+            curl_easy_getinfo(curl, CURLINFO_SPEED_DOWNLOAD_T, &speed_bytes);
+            printf("Speed: %.2f Mbps\n", (speed_bytes * 8.0) / 1000000.0);
+        }
+
+        curl_easy_cleanup(curl);
+    }
+    
+    free(servers);
     return 0;
 }
