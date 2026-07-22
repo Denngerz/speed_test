@@ -262,9 +262,32 @@ char* detect_location(){
 ServerInfo* find_server_by_country(ServerInfo *servers, int count, const char *country) {
     for (int i = 0; i < count; i++) {
         if (strcmp(servers[i].country, country) == 0) {
+            CURL *curl = curl_easy_init();
+            if (!curl) {
+                return NULL;
+            }
+
+            char url[256];
+            snprintf(url, sizeof(url), "http://%s", servers[i].host);
+
+            CURLcode result;
+            curl_easy_setopt(curl, CURLOPT_URL, url);
+            curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);
+            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
+
+            result = curl_easy_perform(curl);
+
+            curl_easy_cleanup(curl);
+
+            if (result != CURLE_OK) {
+                fprintf(stderr, "Failed to connect to host: %s\n", url);
+                continue;
+            } 
+
             return &servers[i];
         }
     }
+    
     return NULL;
 }
 
@@ -274,7 +297,7 @@ int main() {
 
     char *location = detect_location();
     if(location != NULL){
-        printf("%s\n", location);
+        printf("Your location: %s\n", location);
     }
 
     ServerInfo *matching_server = find_server_by_country(all_servers, count, location);
@@ -283,13 +306,15 @@ int main() {
         return 1;
     }
 
+    printf("Chosen server: %s\n", matching_server->host);
+
     double random_server_download_speed = get_server_download_speed(matching_server->host);
  
-    printf("Server download speed: %f Mb\n", random_server_download_speed);
+    printf("Download speed: %f Mb\n", random_server_download_speed);
     
     double random_server_upload_speed = get_server_upload_speed(matching_server->host);
 
-    printf("Server upload speed: %f Mb\n", random_server_upload_speed);
+    printf("Upload speed: %f Mb\n", random_server_upload_speed);
 
     free(all_servers);
     return 0;
