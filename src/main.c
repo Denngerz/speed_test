@@ -261,11 +261,14 @@ char* detect_location(){
 }
 
 ServerInfo* find_server_by_country(ServerInfo *servers, int count, const char *country) {
+    ServerInfo *best_server = NULL;
+    double best_pure_time = 0.0;
+
     for (int i = 0; i < count; i++) {
         if (strcmp(servers[i].country, country) == 0) {
             CURL *curl = curl_easy_init();
             if (!curl) {
-                return NULL;
+                continue;
             }
 
             char url[256];
@@ -274,22 +277,29 @@ ServerInfo* find_server_by_country(ServerInfo *servers, int count, const char *c
             CURLcode result;
             curl_easy_setopt(curl, CURLOPT_URL, url);
             curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);
-            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 5L);
+            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
 
             result = curl_easy_perform(curl);
 
+            if(result == CURLE_OK){
+                double dns_time = 0.0;
+                double connect_time = 0.0;
+
+                curl_easy_getinfo(curl, CURLINFO_NAMELOOKUP_TIME, &dns_time);
+                curl_easy_getinfo(curl, CURLINFO_CONNECT_TIME, &connect_time);
+
+                double latency = connect_time - dns_time;
+
+                if (best_server == NULL || latency < best_pure_time) {
+                    best_pure_time = latency;
+                    best_server = &servers[i];
+                }
+            }
+
             curl_easy_cleanup(curl);
-
-            if (result != CURLE_OK) {
-                fprintf(stderr, "Failed to connect to host: %s\n", url);
-                continue;
-            } 
-
-            return &servers[i];
         }
     }
-    
-    return NULL;
+    return best_server;
 }
 
 int main(int argc, char *argv[]) {
