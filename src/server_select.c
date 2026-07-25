@@ -20,7 +20,7 @@ ServerInfo* find_server_by_country(ServerInfo *servers, int count, const char *c
             CURLcode result;
             curl_easy_setopt(curl, CURLOPT_URL, url);
             curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 1L);
-            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
+            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 2L);
 
             result = curl_easy_perform(curl);
 

@@ -66,15 +66,15 @@ void provide_all_info(ServerInfo *all_servers, int count){
     }
     else{
         printf("Your location: %s\n", location);
-        ServerInfo *matching_server = find_server_by_country(all_servers, count, location);
 
+        printf("Searching for best valid server in %s ...\n", location);
+        ServerInfo *matching_server = find_server_by_country(all_servers, count, location);
         if (matching_server == NULL) {
             printf("Couldn't find a valid server\n");
             free(location);
             printf("================\n");
             return;
         }
-
         printf("Server with which test is being performed: %s\n", matching_server->host);
                 
         double random_server_download_speed = get_server_download_speed(matching_server->host);
