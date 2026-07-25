@@ -46,13 +46,13 @@ make clean
 
 ### Options
 
-| Flag | Description |
-|------|-------------|
-| `-a` | Run the full automated test (location → best server → download → upload) |
-| `-l` | Detect and print the user's location |
-| `-d` | Run a download speed test (requires `-s`) |
-| `-u` | Run an upload speed test (requires `-s`) |
-| `-s <host>` | Specify the server host to test against |
+| Flag        | Description                                                              |
+|-------------|--------------------------------------------------------------------------|
+| `-a`        | Run the full automated test (location → best server → download → upload) |
+| `-l`        | Detect and print the user's location                                     |
+| `-d`        | Run a download speed test (requires `-s`)                                |
+| `-u`        | Run an upload speed test (requires `-s`)                                 |
+| `-s <host>` | Specify the server host to test against                                  |
 
 ### Examples
 
@@ -71,13 +71,13 @@ Detect location only:
 Download test against a specific server:
 
 ```bash
-./build/speed_tester -d -s speedtest.kis.lt:8080
+./build/speed_tester -d -s speedtest.kis.lt:8080 (example)
 ```
 
 Upload test against a specific server:
 
 ```bash
-./build/speed_tester -u -s speedtest.kis.lt:8080
+./build/speed_tester -u -s speedtest.kis.lt:8080 (example)
 ```
 
 ## How it works
